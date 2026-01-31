@@ -11,6 +11,12 @@ from .basic import State, Action, Reward, ConditionExpr
 Grid World Model: A simple grid world environment where an agent only moves in 4 directions or stays still.
 """
 class GridWorldModel:
+    ACTION_UP = Action("UP")
+    ACTION_DOWN = Action("DOWN")
+    ACTION_LEFT = Action("LEFT")
+    ACTION_RIGHT = Action("RIGHT")
+    ACTION_STAY = Action("STAY")
+
     def __init__(self, width: int, height: int, forbidden_states: List[Tuple[int, int]], terminal_states: List[Tuple[int, int]],
                  gamma: np.float32 = 0.9,
                  r_boundary: Reward = Reward(np.float32(-1.0)),
@@ -42,7 +48,11 @@ class GridWorldModel:
         self.forbidden_states = set([self._position_to_state(*i) for i in forbidden_states])
         self.terminal_states = set([self._position_to_state(*i) for i in terminal_states])
 
-        self.actions = [Action("UP"), Action("DOWN"), Action("LEFT"), Action("RIGHT"), Action("STAY")]
+        self.actions = {GridWorldModel.ACTION_UP, GridWorldModel.ACTION_DOWN,
+                        GridWorldModel.ACTION_LEFT, GridWorldModel.ACTION_RIGHT,
+                        GridWorldModel.ACTION_STAY}
+        self.rewards = {r_boundary, r_forbidden, r_terminal, r_other}
+
         self.transition_probabilities = self._initialize_transition_probabilities()
         self.rewards_probabilities = self._initialize_rewards_probabilities()
 
@@ -81,15 +91,15 @@ class GridWorldModel:
                     if (x, y) in self.terminal_states:
                         prob = np.float32(1.0) if (x_next, y_next) == (x, y) else np.float32(0.0)
                     else:
-                        if a == self.actions[0]:  # UP
+                        if a == GridWorldModel.ACTION_UP:  # UP
                             intended_pos = (x, y - 1)
-                        elif a == self.actions[1]:  # DOWN
+                        elif a == GridWorldModel.ACTION_DOWN:  # DOWN
                             intended_pos = (x, y + 1)
-                        elif a == self.actions[2]:  # LEFT
+                        elif a == GridWorldModel.ACTION_LEFT:  # LEFT
                             intended_pos = (x - 1, y)
-                        elif a == self.actions[3]:  # RIGHT
+                        elif a == GridWorldModel.ACTION_RIGHT:  # RIGHT
                             intended_pos = (x + 1, y)
-                        elif a == self.actions[4]:  # STAY
+                        elif a == GridWorldModel.ACTION_STAY:  # STAY
                             intended_pos = (x, y)
                         else:
                             raise ValueError("Unknown action.")
@@ -116,15 +126,15 @@ class GridWorldModel:
         for s in self.states:
             x, y = self._state_to_position(s)
             for a in self.actions:
-                if a == self.actions[0]:
+                if a == GridWorldModel.ACTION_UP:
                     intended_pos = (x, y - 1)
-                elif a == self.actions[1]:
+                elif a == GridWorldModel.ACTION_DOWN:
                     intended_pos = (x, y + 1)
-                elif a == self.actions[2]:
+                elif a == GridWorldModel.ACTION_LEFT:
                     intended_pos = (x - 1, y)
-                elif a == self.actions[3]:
+                elif a == GridWorldModel.ACTION_RIGHT:
                     intended_pos = (x + 1, y)
-                elif a == self.actions[4]:
+                elif a == GridWorldModel.ACTION_STAY:
                     intended_pos = (x, y)
                 else:
                     raise ValueError("Unknown action.")
@@ -166,6 +176,21 @@ class GridWorldModel:
 
         return rewards_probabilities
 
+    def p(self, condition_expr):
+        """
+        Get the probability of a given condition expression.
+        :param condition_expr: The ConditionExpr instance.
+        :return: The probability as a np.float32.
+        """
+        if isinstance(condition_expr, ConditionExpr):
+            if isinstance(condition_expr.outcome, State):
+                return self.transition_probabilities.get(condition_expr, np.float32(0.0))
+            elif isinstance(condition_expr.outcome, Reward):
+                return self.rewards_probabilities.get(condition_expr, np.float32(0.0))
+            else:
+                raise ValueError("Unknown outcome type in ConditionExpr.")
+        else:
+            raise ValueError("Input must be a ConditionExpr instance.")
     # def __str__(self):
     #     return f"GridWorldModel(width={self.width}, height={self.height}, forbidden_states={self.forbidden_states}, terminal_states={self.terminal_states})"
 

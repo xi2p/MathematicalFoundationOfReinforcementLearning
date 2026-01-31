@@ -10,7 +10,7 @@ In particular, s'|s, s'|s,a, r|s,a are all instances of ConditionExpr.
 @author: xi2p
 """
 import numpy as np
-from typing import Union, Tuple
+from typing import Union, Tuple, Dict, Set
 
 
 """
@@ -124,3 +124,44 @@ class ConditionExpr:
 
     def __hash__(self):
         return hash((self.outcome, self.condition))
+
+
+"""
+A Policy instance stores the probability distribution over actions given states.
+"""
+class Policy:
+    def __init__(self, state_space: Set[State], action_space: Set[Action]):
+        self.policy_dict : Dict[Tuple[State, Action], np.float32] = {}
+
+        # initialize policy with all zero probabilities
+        for s in state_space:
+            for a in action_space:
+                self.policy_dict[(s, a)] = np.float32(0.0)
+
+    def pi(self, condition_expr: ConditionExpr) -> np.float32:
+        """
+        Get the probability of taking action a in state s under this policy.
+        :param condition_expr: The ConditionExpr instance representing a|s.
+        :return: The probability as a np.float32.
+        """
+        if isinstance(condition_expr, ConditionExpr):
+            if isinstance(condition_expr.outcome, Action) and isinstance(condition_expr.condition, State):
+                key = (condition_expr.condition, condition_expr.outcome)
+                return self.policy_dict[key]
+            else:
+                raise ValueError("ConditionExpr must be of the form a|s.")
+        else:
+            raise ValueError("Input must be a ConditionExpr instance.")
+
+    def __getitem__(self, condition_expr: ConditionExpr) -> np.float32:
+        return self.pi(condition_expr)
+
+    def __setitem__(self, condition_expr: ConditionExpr, value: np.float32):
+        if isinstance(condition_expr, ConditionExpr):
+            if isinstance(condition_expr.outcome, Action) and isinstance(condition_expr.condition, State):
+                key = (condition_expr.condition, condition_expr.outcome)
+                self.policy_dict[key] = value
+            else:
+                raise ValueError("ConditionExpr must be of the form a|s.")
+        else:
+            raise ValueError("Input must be a ConditionExpr instance.")
