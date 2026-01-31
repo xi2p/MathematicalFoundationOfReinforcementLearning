@@ -90,5 +90,5 @@ print(V_pi)
 # compute the state value matrix V_pi iteratively
 V_pi_iter = np.zeros((len(grid.states)))
 for _ in range(1000):
-    V_pi_iter = R_pi + 0.9 * np.matmul(P_pi, V_pi_iter)
+    V_pi_iter = R_pi + grid.gamma * np.matmul(P_pi, V_pi_iter)
 print(V_pi_iter)
