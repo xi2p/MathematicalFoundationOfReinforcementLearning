@@ -5,7 +5,7 @@ Defines the models.
 
 from typing import Dict, Any, List, Tuple, Union, Optional
 import numpy as np
-from .basic import State, Action, Reward, ConditionExpr
+from .basic import State, Action, Reward, ConditionExpr, Policy
 
 """
 Grid World Model: A simple grid world environment where an agent only moves in 4 directions or stays still.
@@ -176,7 +176,7 @@ class GridWorldModel:
 
         return rewards_probabilities
 
-    def p(self, condition_expr):
+    def p(self, condition_expr) -> np.float32:
         """
         Get the probability of a given condition expression.
         :param condition_expr: The ConditionExpr instance.
@@ -193,6 +193,39 @@ class GridWorldModel:
             raise ValueError("Input must be a ConditionExpr instance.")
     # def __str__(self):
     #     return f"GridWorldModel(width={self.width}, height={self.height}, forbidden_states={self.forbidden_states}, terminal_states={self.terminal_states})"
+
+    def P_pi(self, policy: Policy) -> np.ndarray:
+        """
+        Get the state transition probability matrix under a given policy.
+        :param policy: Given policy.
+        :return: The state transition probability matrix as a 2D numpy array.
+        """
+        P_pi = np.zeros((len(self.states), len(self.states)))
+
+        for s in self.states:
+            for s_next in self.states:
+                prob = np.float32(0.0)  # p(s'|s)
+                for a in self.actions:
+                    prob += policy.pi(a | s) * self.p(s_next | (s, a))
+                P_pi[s.uid - 1, s_next.uid - 1] = prob
+
+        return P_pi
+
+    def R_pi(self, policy: Policy) -> np.ndarray:
+        """
+        Get the expected reward vector under a given policy.
+        :param policy: Given policy.
+        :return: The expected reward vector as a 1D numpy array.
+        """
+        R_pi = np.zeros((len(self.states)))
+        for s in self.states:
+            expected_reward = np.float32(0.0)
+            for a in self.actions:
+                for r in self.rewards:
+                    expected_reward += policy.pi(a | s) * self.p(r | (s, a)) * r.value
+            R_pi[s.uid - 1] = expected_reward
+
+        return R_pi
 
     def __str__(self):
         """

@@ -33,22 +33,9 @@ def calc_state_value(grid_world, _policy, iteration_limit) -> np.ndarray:
     :param iteration_limit: Number of iterations for evaluation.
     :return: State value vector as np.ndarray.
     """
-    P_pi = np.zeros((len(grid_world.states), len(grid_world.states)))
+    P_pi = grid_world.P_pi(_policy)
 
-    for s in grid_world.states:
-        for s_next in grid_world.states:
-            prob = np.float32(0.0)  # p(s'|s)
-            for a in grid_world.actions:
-                prob += _policy.pi(a | s) * grid_world.p(s_next | (s, a))
-            P_pi[s.uid - 1, s_next.uid - 1] = prob
-
-    R_pi = np.zeros((len(grid_world.states)))
-    for s in grid_world.states:
-        expected_reward = np.float32(0.0)
-        for a in grid_world.actions:
-            for r in grid_world.rewards:
-                expected_reward += _policy.pi(a | s) * grid_world.p(r | (s, a)) * r.value
-        R_pi[s.uid - 1] = expected_reward
+    R_pi = grid_world.R_pi(_policy)
 
     V_pi_iter = np.zeros((len(grid_world.states)))
     for _ in range(iteration_limit):
