@@ -3,8 +3,10 @@ Defines the models.
 @author: xi2p
 """
 
-from typing import Dict, Any, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple
+
 import numpy as np
+
 from .basic import State, Action, Reward, ConditionExpr, Policy
 
 """
@@ -69,8 +71,8 @@ class GridWorldModel:
 
     def _initialize_states(self) -> List[State]:
         states = []
-        for x in range(self.width):
-            for y in range(self.height):
+        for y in range(self.width):
+            for x in range(self.height):
                 uid = y * self.width + x + 1
                 states.append(State(uid))
         return states
@@ -226,6 +228,42 @@ class GridWorldModel:
             R_pi[s.uid - 1] = expected_reward
 
         return R_pi
+
+    def step(self, state: State, action: Action) -> Tuple[State, Reward]:
+        """
+        take a step in the grid world given a state and an action
+        :param state: The current state
+        :param action: The action to take
+        :return: A tuple of (next_state, reward)
+        """
+        x, y = self._state_to_position(state)
+        # TODO: the process is stochastic in general. Edit later to add stochasticity.
+        if action == GridWorldModel.ACTION_UP:
+            intended_pos = (x, y - 1)
+        elif action == GridWorldModel.ACTION_DOWN:
+            intended_pos = (x, y + 1)
+        elif action == GridWorldModel.ACTION_LEFT:
+            intended_pos = (x - 1, y)
+        elif action == GridWorldModel.ACTION_RIGHT:
+            intended_pos = (x + 1, y)
+        elif action == GridWorldModel.ACTION_STAY:
+            intended_pos = (x, y)
+        else:
+            raise ValueError("Unknown action.")
+
+        # Determine next state
+        if not ((0 <= intended_pos[0] < self.width) and (0 <= intended_pos[1] < self.height)):
+            next_state = state
+            reward = self.r_boundary
+        else:
+            next_state = self._position_to_state(intended_pos[0], intended_pos[1])
+            if next_state in self.forbidden_states:
+                reward = self.r_forbidden
+            elif next_state in self.terminal_states:
+                reward = self.r_terminal
+            else:
+                reward = self.r_other
+        return next_state, reward
 
     def __str__(self):
         """
