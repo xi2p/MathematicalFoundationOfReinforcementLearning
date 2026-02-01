@@ -190,7 +190,7 @@ class Policy:
         for a in self.action_space:
             actions.append(a)
             probabilities.append(self.pi(a | state))
-
+        probabilities = np.array(probabilities, dtype=np.float32)
         return np.random.choice(actions, p=probabilities)
 
 
