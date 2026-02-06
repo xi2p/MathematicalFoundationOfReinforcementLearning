@@ -1,7 +1,10 @@
-import mforl.model
-from mforl.basic import Action, State, Reward, Policy
-import numpy as np
+import sys
+sys.path.append('..')
 
+import mforl.model
+from mforl.basic import Policy
+import numpy as np
+from copy import deepcopy
 
 # model
 grid = mforl.model.GridWorldModel(
@@ -24,36 +27,15 @@ policy.fill_uniform()
 
 print(grid)
 
-
-def calc_state_value(grid_world, _policy, iteration_limit) -> np.ndarray:
-    """
-    Calculate state value given a policy.
-    :param grid_world: The GridWorldModel instance.
-    :param _policy: Given policy.
-    :param iteration_limit: Number of iterations for evaluation.
-    :return: State value vector as np.ndarray.
-    """
-    P_pi = grid_world.P_pi(_policy)
-
-    R_pi = grid_world.R_pi(_policy)
-
-    V_pi_iter = np.zeros((len(grid_world.states)))
-    for _ in range(iteration_limit):
-        V_pi_iter = R_pi + grid_world.gamma * np.matmul(P_pi, V_pi_iter)
-
-    return V_pi_iter
-
-# Policy Iteration
+# Value Iteration
 # Guess initial value vector
 v = np.zeros((len(grid.states)))
 
-n = 5   # truncate after n iterations in policy evaluation
-
 ITERATION_LIMIT = 100
 for t in range(ITERATION_LIMIT):
-    # policy evaluation
-    v = calc_state_value(grid, policy, n)
-    # policy improvement
+    v_next = deepcopy(v)
+    policy_next = deepcopy(policy)
+
     for s in grid.states:
         # update policy at every state by choosing max action value
         q_list = []
@@ -72,20 +54,20 @@ for t in range(ITERATION_LIMIT):
             q_list.append(q_s_a)
             a_list.append(a)
 
-        # find max q value and update policy to be greedy
+        # find max q value and update v(s)
         max_q = max(q_list)
+        v_next[s.uid - 1] = max_q
+        # update policy to be greedy
         max_index = q_list.index(max_q)
         for a in grid.actions:
             if a == a_list[max_index]:
-                policy[a | s] = np.float32(1.0)
+                policy_next[a | s] = np.float32(1.0)
             else:
-                policy[a | s] = np.float32(0.0)
-
-
+                policy_next[a | s] = np.float32(0.0)
+    v = v_next
+    policy = policy_next
+    print(f"Iteration {t+1}: v = {v}")
 # print final policy
-
-v = calc_state_value(grid, policy, 1000)
-
 print("Final Policy:")
 for s in grid.states:
     for a in grid.actions:

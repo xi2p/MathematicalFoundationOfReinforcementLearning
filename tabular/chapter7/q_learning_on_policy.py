@@ -1,9 +1,10 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
 from mforl.basic import Action, State, Reward, Policy
 import numpy as np
 import random
-from copy import deepcopy
-
 
 # model
 grid = mforl.model.GridWorldModel(

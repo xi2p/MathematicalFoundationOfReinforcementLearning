@@ -1,10 +1,11 @@
+import sys
+sys.path.append('..')
+
 from typing import Tuple, Dict, List
 
 import mforl.model
 from mforl.basic import Action, State, Reward, Policy
 import numpy as np
-from copy import deepcopy
-
 
 # model
 # grid = mforl.model.GridWorldModel(
@@ -40,7 +41,7 @@ print(grid)
 # MC epsilon-Greedy policy iteration
 
 ITERATION_LIMIT = 50
-SAMPLE_LENGTH = 200000
+SAMPLE_LENGTH = 20000
 EPSILON = 0.2
 
 for t in range(ITERATION_LIMIT):

@@ -1,5 +1,8 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
-from mforl.basic import Action, State, Reward, Policy
+from mforl.basic import Policy
 import numpy as np
 
 
@@ -47,10 +50,12 @@ def calc_state_value(grid_world, _policy, iteration_limit) -> np.ndarray:
 # Guess initial value vector
 v = np.zeros((len(grid.states)))
 
+n = 5   # truncate after n iterations in policy evaluation
+
 ITERATION_LIMIT = 100
 for t in range(ITERATION_LIMIT):
     # policy evaluation
-    v = calc_state_value(grid, policy, 1000)
+    v = calc_state_value(grid, policy, n)
     # policy improvement
     for s in grid.states:
         # update policy at every state by choosing max action value
@@ -81,6 +86,9 @@ for t in range(ITERATION_LIMIT):
 
 
 # print final policy
+
+v = calc_state_value(grid, policy, 1000)
+
 print("Final Policy:")
 for s in grid.states:
     for a in grid.actions:

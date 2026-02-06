@@ -1,5 +1,8 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
-from mforl.basic import Action, State, Reward, Policy
+from mforl.basic import State, Policy
 import numpy as np
 
 

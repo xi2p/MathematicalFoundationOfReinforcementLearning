@@ -1,14 +1,18 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
-from mforl.basic import Action, State, Reward, Policy
+from mforl.basic import Policy
 import numpy as np
 from copy import deepcopy
 
+
 # model
 grid = mforl.model.GridWorldModel(
-    width=2,
-    height=2,
-    forbidden_states=[(1, 0)],
-    terminal_states=[(1, 1)]
+    width=3,
+    height=3,
+    forbidden_states=[(0, 1), (0, 2), (2, 1)],
+    terminal_states=[(2, 2)]
 )
 
 # action
@@ -24,36 +28,52 @@ policy.fill_uniform()
 
 print(grid)
 
-# Value Iteration
+# MC basic policy iteration
+
 # Guess initial value vector
 v = np.zeros((len(grid.states)))
 
-ITERATION_LIMIT = 100
+ITERATION_LIMIT = 10
+SAMPLE_LENGTH = 100
+EPISODE_LIMIT = 100
+
 for t in range(ITERATION_LIMIT):
-    v_next = deepcopy(v)
     policy_next = deepcopy(policy)
 
     for s in grid.states:
-        # update policy at every state by choosing max action value
+        # policy evaluation
         q_list = []
         a_list = []
         for a in grid.actions:
-            # calculate q(s,a)
+            # estimate q(s,a)
             q_s_a = np.float32(0.0)
-            # first calculate reward part
-            for r in grid.rewards:
-                q_s_a += grid.p(r | (s, a)) * r.value
 
-            # then calculate value part
-            for s_next in grid.states:
-                q_s_a += grid.p(s_next | (s, a)) * v[s_next.uid - 1] * grid.gamma
+            for _ in range(EPISODE_LIMIT):
+                total_reward = np.float32(0.0)
+                discount = np.float32(1.0)
+                current_state = s
+                current_action = a
+
+                for _ in range(SAMPLE_LENGTH):
+                    # take action and observe next state and reward
+                    next_state, reward = grid.step(current_state, current_action)
+
+                    total_reward += discount * reward.value
+                    discount *= grid.gamma
+
+                    current_state = next_state
+                    # follow the current policy to choose next action
+                    current_action = policy.decide(current_state)
+
+                q_s_a += total_reward / EPISODE_LIMIT
+
 
             q_list.append(q_s_a)
             a_list.append(a)
 
         # find max q value and update v(s)
         max_q = max(q_list)
-        v_next[s.uid - 1] = max_q
+        v[s.uid - 1] = max_q
         # update policy to be greedy
         max_index = q_list.index(max_q)
         for a in grid.actions:
@@ -61,9 +81,9 @@ for t in range(ITERATION_LIMIT):
                 policy_next[a | s] = np.float32(1.0)
             else:
                 policy_next[a | s] = np.float32(0.0)
-    v = v_next
     policy = policy_next
     print(f"Iteration {t+1}: v = {v}")
+
 # print final policy
 print("Final Policy:")
 for s in grid.states:
@@ -74,7 +94,3 @@ for s in grid.states:
 print("Final State Values:")
 for s in grid.states:
     print(f"v({s}) = {v[s.uid - 1]}")
-
-
-
-

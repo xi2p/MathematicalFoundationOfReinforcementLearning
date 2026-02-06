@@ -1,9 +1,10 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
 from mforl.basic import Action, State, Reward, Policy
 import numpy as np
 import random
-from copy import deepcopy
-
 
 # model
 grid = mforl.model.GridWorldModel(
@@ -30,13 +31,12 @@ policy.fill_uniform()
 
 print(grid)
 
-# n step sarsa learning of action value, and policy improvement
+# TD learning of action value, and policy improvement
 
 ITERATION_LIMIT = 100
 SAMPLE_LENGTH = 1000
 alpha = 0.1     # learning rate
 epsilon = 0.1
-n = 5   # n-step
 
 
 # Episode generation
@@ -44,40 +44,25 @@ q_dict: dict[tuple[State, Action], np.float32] = {}
 for __i in range(ITERATION_LIMIT):
     current_state = random.choice(grid.states)
     current_action = policy.decide(current_state)
-
-    n_step_trajectory = []
-
-    for _ in range(n-1):
-        next_state, reward = grid.step(current_state, current_action)
-        n_step_trajectory.append((current_state, current_action, reward))
-        current_state = next_state
-        current_action = policy.decide(current_state)
-
     for _ in range(SAMPLE_LENGTH):
         next_state, reward = grid.step(current_state, current_action)
-        n_step_trajectory.append((current_state, current_action, reward))
+        next_action = policy.decide(next_state)
         # TD update
-        key_to_update = n_step_trajectory[0][0], n_step_trajectory[0][1]  # (state, action)
-        key_current = (current_state, current_action)
-        if key_to_update not in q_dict:
-            q_dict[key_to_update] = np.float32(0.0)
-        if key_current not in q_dict:
-            q_dict[key_current] = np.float32(0.0)
 
-        # compute n-step return
-        g = np.float32(0.0)
-        for s, a, r in n_step_trajectory[::-1]:
-            g = r.value + grid.gamma * g
+        key = (current_state, current_action)
+        if key not in q_dict:
+            q_dict[key] = np.float32(0.0)
 
-        g += grid.gamma ** n * q_dict[key_current]
+        if (next_state, next_action) not in q_dict:
+            q_dict[(next_state, next_action)] = np.float32(0.0)
 
-        q_dict[key_to_update] += alpha * (g - q_dict[key_to_update])
+        q_dict[key] += alpha * (reward.value + grid.gamma * q_dict[(next_state, next_action)] - q_dict[key])
 
         # update policy to be epsilon-greedy
         max_q = -np.inf
         best_action = None
         for a in grid.actions:
-            key = (key_to_update[0], a)
+            key = (current_state, a)
             q_value = q_dict.get(key, -np.inf)
             if q_value > max_q:
                 max_q = q_value
@@ -88,15 +73,14 @@ for __i in range(ITERATION_LIMIT):
 
         for a in grid.actions:
             if a == best_action:
-                policy[a | key_to_update[0]] = np.float32(1.0 - epsilon + (epsilon / len(grid.actions)))
+                policy[a | current_state] = np.float32(1.0 - epsilon + (epsilon / len(grid.actions)))
             else:
-                policy[a | key_to_update[0]] = np.float32(epsilon / len(grid.actions))
+                policy[a | current_state] = np.float32(epsilon / len(grid.actions))
 
 
-        n_step_trajectory.pop(0)
+
         current_state = next_state
-        current_action = policy.decide(current_state)
-        
+        current_action = next_action
     print(f"Iteration {__i} completed.")
 
 # print final policy

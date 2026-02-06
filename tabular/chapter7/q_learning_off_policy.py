@@ -1,9 +1,10 @@
+import sys
+sys.path.append('..')
+
 import mforl.model
 from mforl.basic import Action, State, Reward, Policy
 import numpy as np
 import random
-from copy import deepcopy
-
 
 # model
 grid = mforl.model.GridWorldModel(
@@ -24,38 +25,48 @@ action_left = grid.ACTION_LEFT
 action_right = grid.ACTION_RIGHT
 action_stay = grid.ACTION_STAY
 
-policy = Policy(grid.states, grid.actions)
-policy.fill_uniform()
-
-
 print(grid)
 
-# TD learning of action value, and policy improvement
+# Q-learning
+policy_behavior = Policy(grid.states, grid.actions)
+policy_behavior.fill_uniform()
+policy_target = Policy(grid.states, grid.actions)
+policy_target.fill_uniform()
+
 
 ITERATION_LIMIT = 100
 SAMPLE_LENGTH = 1000
 alpha = 0.1     # learning rate
-epsilon = 0.1
 
 
 # Episode generation
 q_dict: dict[tuple[State, Action], np.float32] = {}
 for __i in range(ITERATION_LIMIT):
+    # Use behavior policy to generate episodes
+    trajectory : list[tuple[State, Action, Reward]] = []
     current_state = random.choice(grid.states)
-    current_action = policy.decide(current_state)
     for _ in range(SAMPLE_LENGTH):
+        current_action = policy_behavior.decide(current_state)
         next_state, reward = grid.step(current_state, current_action)
-        next_action = policy.decide(next_state)
-        # TD update
+        trajectory.append((current_state, current_action, reward))
+        current_state = next_state
 
+    # Update q-values and target policy using the generated trajectory
+    for i in range(len(trajectory)-1):
+        current_state, current_action, reward = trajectory[i]
+        next_state, _, _ = trajectory[i+1]
         key = (current_state, current_action)
+
         if key not in q_dict:
             q_dict[key] = np.float32(0.0)
 
-        if (next_state, next_action) not in q_dict:
-            q_dict[(next_state, next_action)] = np.float32(0.0)
+        for a in grid.actions:
+            if (next_state, a) not in q_dict:
+                q_dict[(next_state, a)] = np.float32(0.0)
 
-        q_dict[key] += alpha * (reward.value + grid.gamma * q_dict[(next_state, next_action)] - q_dict[key])
+        # find max_a' Q(s', a')
+        max_next_q = max(q_dict[(next_state, a)] for a in grid.actions)
+        q_dict[key] += alpha * (reward.value + grid.gamma * max_next_q - q_dict[key])
 
         # update policy to be epsilon-greedy
         max_q = -np.inf
@@ -72,27 +83,23 @@ for __i in range(ITERATION_LIMIT):
 
         for a in grid.actions:
             if a == best_action:
-                policy[a | current_state] = np.float32(1.0 - epsilon + (epsilon / len(grid.actions)))
+                policy_target[a | current_state] = np.float32(1.0)
             else:
-                policy[a | current_state] = np.float32(epsilon / len(grid.actions))
+                policy_target[a | current_state] = np.float32(0.0)
 
-
-
-        current_state = next_state
-        current_action = next_action
     print(f"Iteration {__i} completed.")
 
 # print final policy
 print("Final Policy:")
 for s in grid.states:
     for a in grid.actions:
-        prob = policy[a | s]
+        prob = policy_target[a | s]
         if prob > 0:
             print(f"pi({a}|{s}) = {prob}")
 
 print("Final State Values:")
-P_pi = grid.P_pi(policy)
-R_pi = grid.R_pi(policy)
+P_pi = grid.P_pi(policy_target)
+R_pi = grid.R_pi(policy_target)
 v = np.linalg.inv(np.eye(len(grid.states)) - grid.gamma * P_pi).dot(R_pi)
 for s in grid.states:
     print(f"v({s}) = {v[s.uid - 1]}")
