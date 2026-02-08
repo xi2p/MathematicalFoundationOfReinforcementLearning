@@ -126,8 +126,3 @@ for state in grid.states:
     print(f"State: {state}, Learned Value: {state_value:.4f}")
 
 print("Learned parameters w:", w)
-
-
-# order=3
-# tensor([ 6.7403, -0.7160,  1.5544, -0.7160,  0.0327, -1.0470, -0.1502,  1.2027,
-#          0.0308, -0.1758, -0.6556, -0.1758,  0.0327,  1.2027, -0.1502, -1.0470])
