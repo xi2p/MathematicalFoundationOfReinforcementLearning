@@ -291,7 +291,7 @@ class PolicyTabular:
 
         probabilities_tensor = torch.stack(probabilities)
         probabilities_tensor = probabilities_tensor / torch.sum(probabilities_tensor)
-        action_index = torch.multinomial(probabilities_tensor, num_samples=1).item()
+        action_index = int(torch.multinomial(probabilities_tensor, num_samples=1).item())
         return actions[action_index]
 
 
