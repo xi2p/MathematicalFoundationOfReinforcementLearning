@@ -9,6 +9,13 @@ from copy import deepcopy
 import tqdm
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
+NUM_EPISODES = 1000
+EPISODE_LENGTH = 1000
+alpha = 0.01  # learning rate
+episodes = []
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -16,6 +23,8 @@ grid = GridWorldModel(
     forbidden_states=[State((0, 1)), State((0, 2)), State((2, 1))],
     terminal_states=[State((2, 2))]
 )
+
+print(grid)
 
 # action
 action_up = grid.ACTION_UP
@@ -35,8 +44,6 @@ policy[action_right | State((0, 2))] = torch.tensor(1.0)
 policy[action_right | State((1, 2))] = torch.tensor(1.0)
 policy[action_stay | State((2, 2))] = torch.tensor(1.0)
 
-
-print(grid)
 
 # Define the state value function
 net = torch.nn.Sequential(
@@ -63,12 +70,7 @@ def feature_extractor(state: State) -> torch.Tensor:
 # Use TD learning to optimize state value function
 
 # Generate episodes
-NUM_EPISODES = 1000
-EPISODE_LENGTH = 1000
-alpha = 0.01  # learning rate
-episodes = []
 
-# for episode_idx in range(NUM_EPISODES):
 for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
     episode = []
     # random choice of starting state
@@ -95,7 +97,7 @@ for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
         optimizer.zero_grad()
         v_t = net(feature_extractor(state_t))
         v_t1 = net(feature_extractor(state_t1)).detach()  # detach to prevent backprop through next state
-        td_error = torch.pow(reward_t.value + grid.gamma * v_t1 - v_t, 2)
+        td_error = torch.pow(reward_t.value + GAMMA * v_t1 - v_t, 2)
         td_error.backward()
         optimizer.step()
 

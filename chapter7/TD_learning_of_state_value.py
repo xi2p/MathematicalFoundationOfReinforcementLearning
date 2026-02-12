@@ -6,6 +6,13 @@ from mforl.tabular.basic import Action, State, Reward, Policy
 import numpy as np
 import random
 
+
+GAMMA = np.float32(0.9)
+ITERATION_LIMIT = 1000
+SAMPLE_LENGTH = 100
+alpha = 0.1     # learning rate
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -42,10 +49,6 @@ print(grid)
 # Guess initial value vector
 v = np.zeros((len(grid.states)))
 
-ITERATION_LIMIT = 1000
-SAMPLE_LENGTH = 100
-alpha = 0.1     # learning rate
-
 for t in range(ITERATION_LIMIT):
     # Episode generation
     current_state = random.choice(grid.states)
@@ -53,7 +56,7 @@ for t in range(ITERATION_LIMIT):
         current_action = policy.decide(current_state)
         next_state, reward = grid.step(current_state, current_action)
         # TD update
-        v[current_state.uid - 1] += alpha * (reward.value + grid.gamma * v[next_state.uid - 1] - v[current_state.uid - 1])
+        v[current_state.uid - 1] += alpha * (reward.value + GAMMA * v[next_state.uid - 1] - v[current_state.uid - 1])
         current_state = next_state
 
 

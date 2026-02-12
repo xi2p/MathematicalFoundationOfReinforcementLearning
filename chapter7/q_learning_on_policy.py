@@ -6,6 +6,13 @@ from mforl.tabular.basic import Action, State, Reward, Policy
 import numpy as np
 import random
 
+
+GAMMA = np.float32(0.9)
+SAMPLE_LENGTH = 100000
+alpha = 0.1     # learning rate
+epsilon = 0.1
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -18,23 +25,12 @@ grid = GridWorldModel(
     r_other=Reward(np.float32(0.0)),
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 print(grid)
 
 # Q-learning
 policy = Policy(grid.states, grid.actions)
 policy.fill_uniform()
-
-
-SAMPLE_LENGTH = 100000
-alpha = 0.1     # learning rate
-epsilon = 0.1
 
 
 # Episode generation
@@ -57,7 +53,7 @@ for _ in range(SAMPLE_LENGTH):
 
     # find max_a' Q(s', a')
     max_next_q = max(q_dict[(next_state, a)] for a in grid.actions)
-    q_dict[key] += alpha * (reward.value + grid.gamma * max_next_q - q_dict[key])
+    q_dict[key] += alpha * (reward.value + GAMMA * max_next_q - q_dict[key])
 
     # update policy to be epsilon-greedy
     max_q = -np.inf
@@ -95,6 +91,6 @@ for s in grid.states:
 print("Final State Values:")
 P_pi = grid.P_pi(policy)
 R_pi = grid.R_pi(policy)
-v = np.linalg.inv(np.eye(len(grid.states)) - grid.gamma * P_pi).dot(R_pi)
+v = np.linalg.inv(np.eye(len(grid.states)) - GAMMA * P_pi).dot(R_pi)
 for s in grid.states:
     print(f"v({s}) = {v[s.uid - 1]}")

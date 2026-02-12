@@ -4,8 +4,8 @@ sys.path.append('..')
 from mforl.function.grid_world_model import GridWorldModel, PolicyTabular
 from mforl.function.basic import State, Action, Reward
 import torch
-import random
-from copy import deepcopy
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 # model
@@ -16,23 +16,6 @@ grid = GridWorldModel(
     terminal_states=[State((2, 2))]
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
-
-policy = PolicyTabular(grid.states, grid.actions)
-policy[action_right | State((0, 0))] = torch.tensor(1.0)
-policy[action_down | State((1, 0))] = torch.tensor(1.0)
-policy[action_left | State((2, 0))] = torch.tensor(1.0)
-policy[action_right | State((0, 1))] = torch.tensor(1.0)
-policy[action_down | State((1, 1))] = torch.tensor(1.0)
-policy[action_left | State((2, 1))] = torch.tensor(1.0)
-policy[action_right | State((0, 2))] = torch.tensor(1.0)
-policy[action_right | State((1, 2))] = torch.tensor(1.0)
-policy[action_stay | State((2, 2))] = torch.tensor(1.0)
 
 
 print(grid)
@@ -103,10 +86,7 @@ print("Learned parameters w:", w)
 # tensor([ 6.7403, -0.7160,  1.5544, -0.7160,  0.0327, -1.0470, -0.1502,  1.2027,
 #          0.0308, -0.1758, -0.6556, -0.1758,  0.0327,  1.2027, -0.1502, -1.0470])
 
-import torch
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 
 def plot_state_value_comparison(net, true_values, x_range, y_range, resolution=50):

@@ -12,6 +12,7 @@ import tqdm
 import torch.nn.functional as F
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
 EPISODES_NUM = 10000
 TRAJECTORY_LENGTH = 100
 LEARNING_RATE = 0.001
@@ -23,7 +24,6 @@ grid = GridWorldModel(
     height=3,
     forbidden_states=[State((0, 1)), State((0, 2)), State((2, 1))],
     terminal_states=[State((2, 2))],
-    gamma=torch.tensor(0.9),
     r_boundary=Reward(torch.tensor(-1.0)),
     r_forbidden=Reward(torch.tensor(-10.0)),
     r_terminal=Reward(torch.tensor(1.0)),
@@ -159,7 +159,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
             else:
                 next_action = policy.decide(next_state)
                 next_q = q_net.q(next_state, next_action)
-                target = reward.value + grid.gamma * next_q
+                target = reward.value + GAMMA * next_q
 
         # actor
         log_prob = policy.get_log_prob(current_state, current_action)
@@ -171,7 +171,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
         policy_optimizer.step()
 
         # critic
-        # td_error = reward.value + grid.gamma * q_net.q(next_state, next_action).detach() - q_net.q(current_state, current_action)
+        # td_error = reward.value + GAMMA * q_net.q(next_state, next_action).detach() - q_net.q(current_state, current_action)
         target = target.detach()
         critic_loss = criterion(q_value, target)
         q_net_optimizer.zero_grad()

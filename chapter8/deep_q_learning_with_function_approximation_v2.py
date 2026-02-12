@@ -11,6 +11,7 @@ from mforl.function.grid_world_model import GridWorldModel, PolicyTabular
 from mforl.function.basic import State, Action, Reward
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
 EPISODES_NUM = 100  # number of episodes to train
 TRAJECTORY_LENGTH = 1000  # length of trajectory in each episode
 ITERATION_NUM = 100  # iteration number each episode
@@ -139,7 +140,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
         optimizer.zero_grad()
 
         for state, action, reward, state_next in batch_samples:
-            target_q = calculate_target_q(net_target, state_next, reward, grid.gamma)
+            target_q = calculate_target_q(net_target, state_next, reward, GAMMA)
 
             features = feature_extractor(state, action)
             predicted_q = net(features)

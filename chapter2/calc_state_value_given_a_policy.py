@@ -5,13 +5,7 @@ from mforl.tabular.model import GridWorldModel
 from mforl.tabular.basic import State, Policy
 import numpy as np
 
-
-# grid = mforl.model.GridWorldModel(
-#     width=3,
-#     height=3,
-#     forbidden_states=[(0, 1), (0, 2), (2, 1)],
-#     terminal_states=[(2, 2)]
-# )
+GAMMA = np.float32(0.9)
 
 # model
 grid = GridWorldModel(
@@ -87,11 +81,11 @@ for s in grid.states:
 print(R_pi)
 
 # compute the state value matrix V_pi = np.linalg.inv(np.eye(len(grid.states)) - 0.9 * P_pi).dot(R_pi)
-V_pi = np.linalg.inv(np.eye(len(grid.states)) - grid.gamma * P_pi).dot(R_pi)
+V_pi = np.linalg.inv(np.eye(len(grid.states)) - GAMMA * P_pi).dot(R_pi)
 print(V_pi)
 
 # compute the state value matrix V_pi iteratively
 V_pi_iter = np.zeros((len(grid.states)))
 for _ in range(1000):
-    V_pi_iter = R_pi + grid.gamma * np.matmul(P_pi, V_pi_iter)
+    V_pi_iter = R_pi + GAMMA * np.matmul(P_pi, V_pi_iter)
 print(V_pi_iter)

@@ -12,6 +12,7 @@ from mforl.function.grid_world_model import GridWorldModel, PolicyTabular
 from mforl.function.basic import State, Action, Reward
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
 EPISODES_NUM = 500  # number of episodes to train
 TRAJECTORY_LENGTH = 200  # length of trajectory in each episode
 LEARNING_RATE = 0.01  # learning rate
@@ -25,6 +26,7 @@ grid = GridWorldModel(
     r_forbidden=Reward(torch.tensor(-10.0))
 )
 
+print(grid)
 
 ACTION_TO_INDEX_DICT = {
     grid.ACTION_UP: 0,
@@ -33,8 +35,6 @@ ACTION_TO_INDEX_DICT = {
     grid.ACTION_RIGHT: 3,
     grid.ACTION_STAY: 4,
 }
-
-print(grid)
 
 
 def feature_extractor(state: State) -> torch.Tensor:
@@ -62,13 +62,13 @@ class PolicyNetwork(torch.nn.Module):
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        logits = self.net(x)
-        return F.softmax(logits, dim=-1)
+        output = self.net(x)
+        return F.softmax(output, dim=-1)
 
     def get_log_prob(self, state: State, action: Action) -> torch.Tensor:
         features = feature_extractor(state)
-        logits = self.net(features)
-        log_probs = F.log_softmax(logits, dim=-1)
+        output = self.net(features)
+        log_probs = F.log_softmax(output, dim=-1)
         return log_probs[ACTION_TO_INDEX_DICT[action]]
 
     def decide(self, state: State) -> Action:
@@ -118,7 +118,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
             for j in range(i, len(trajectory)):
                 _, _, reward = trajectory[j]
                 q += discount * reward.value
-                discount *= grid.gamma
+                discount *= GAMMA
 
 
 

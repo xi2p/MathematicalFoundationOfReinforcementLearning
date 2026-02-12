@@ -10,6 +10,15 @@ from copy import deepcopy
 import tqdm
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)
+EPISODES_NUM = 100      # number of episodes to train
+TRAJECTORY_LENGTH = 1000   # length of trajectory in each episode
+ITERATION_NUM = 100     # iteration number each episode
+batch = 10              # number of samples in each batch for training
+C = 5                   # number of iterations to let w_t <- w
+alpha = 0.01  # learning rate
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -19,21 +28,13 @@ grid = GridWorldModel(
     r_forbidden=Reward(torch.tensor(-10.0))
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
+print(grid)
 
 policy_behavior = PolicyTabular(grid.states, grid.actions)
 policy_behavior.fill_uniform()
 
 policy_target = PolicyTabular(grid.states, grid.actions)
 policy_target.fill_uniform()
-
-
-print(grid)
 
 # Define the state value function
 net = torch.nn.Sequential(
@@ -61,14 +62,6 @@ def feature_extractor(state: State, action: Action) -> torch.Tensor:
 # Q learning with function approximation
 
 # Generate episodes
-EPISODES_NUM = 100      # number of episodes to train
-TRAJECTORY_LENGTH = 1000   # length of trajectory in each episode
-ITERATION_NUM = 100     # iteration number each episode
-batch = 10              # number of samples in each batch for training
-C = 5                   # number of iterations to let w_t <- w
-alpha = 0.01  # learning rate
-
-
 for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
     current_state = random.choice(grid.states)
     current_action = policy_behavior.decide(current_state)
@@ -93,7 +86,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
 
         for s, a, r, s_ in batch_samples:
             # calculate y_target
-            y_target = r.value + grid.gamma * torch.max(
+            y_target = r.value + GAMMA * torch.max(
                 torch.tensor(
                     [net_t(feature_extractor(s_, a_)).detach() for a_ in grid.actions]
                 )

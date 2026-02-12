@@ -20,7 +20,6 @@ class GridWorldModel:
     ACTION_STAY = Action("STAY")
 
     def __init__(self, width: int, height: int, forbidden_states: List[Tuple[int, int]], terminal_states: List[Tuple[int, int]],
-                 gamma: np.float32 = 0.9,
                  r_boundary: Reward = Reward(np.float32(-1.0)),
                  r_forbidden: Reward = Reward(np.float32(-1.0)),
                  r_terminal: Reward = Reward(np.float32(1.0)),
@@ -32,7 +31,6 @@ class GridWorldModel:
         :param height: The height of the grid world.
         :param forbidden_states: Positions of forbidden states in the grid world.
         :param terminal_states: Positions of terminal states in the grid world.
-        :param gamma: Discount factor.
         :param r_boundary: Reward for hitting the boundary.
         :param r_forbidden: Reward for hitting a wall.
         :param r_terminal: Reward for reaching a terminal state.
@@ -40,7 +38,6 @@ class GridWorldModel:
         """
         self.width = width
         self.height = height
-        self.gamma = gamma
         self.r_boundary = r_boundary
         self.r_forbidden = r_forbidden
         self.r_terminal = r_terminal

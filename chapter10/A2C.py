@@ -12,6 +12,7 @@ import tqdm
 import torch.nn.functional as F
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
 EPISODES_NUM = 5000
 TRAJECTORY_LENGTH = 200
 LEARNING_RATE = 0.001
@@ -23,7 +24,6 @@ grid = GridWorldModel(
     height=3,
     forbidden_states=[State((0, 1)), State((0, 2)), State((2, 1))],
     terminal_states=[State((2, 2))],
-    gamma=torch.tensor(0.9),
     r_boundary=Reward(torch.tensor(-1.0)),
     r_forbidden=Reward(torch.tensor(-10.0)),
     r_terminal=Reward(torch.tensor(1.0)),
@@ -32,7 +32,6 @@ grid = GridWorldModel(
 )
 
 print(grid)
-
 
 ACTION_TO_INDEX_DICT = {
     grid.ACTION_UP: 0,
@@ -158,7 +157,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
 
         else:
             next_value = v_net.v(next_state)
-            target_value = reward.value + grid.gamma * next_value
+            target_value = reward.value + GAMMA * next_value
 
         with torch.no_grad():
             advantage = target_value - current_value

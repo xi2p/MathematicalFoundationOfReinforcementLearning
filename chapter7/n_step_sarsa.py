@@ -8,6 +8,14 @@ import random
 from copy import deepcopy
 
 
+GAMMA = np.float32(0.9)
+ITERATION_LIMIT = 100
+SAMPLE_LENGTH = 1000
+alpha = 0.1     # learning rate
+epsilon = 0.1
+n = 5   # n-step
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -20,12 +28,6 @@ grid = GridWorldModel(
     r_other=Reward(np.float32(0.0)),
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 policy = Policy(grid.states, grid.actions)
 policy.fill_uniform()
@@ -34,13 +36,6 @@ policy.fill_uniform()
 print(grid)
 
 # n step sarsa learning of action value, and policy improvement
-
-ITERATION_LIMIT = 100
-SAMPLE_LENGTH = 1000
-alpha = 0.1     # learning rate
-epsilon = 0.1
-n = 5   # n-step
-
 
 # Episode generation
 q_dict: dict[tuple[State, Action], np.float32] = {}
@@ -70,9 +65,9 @@ for __i in range(ITERATION_LIMIT):
         # compute n-step return
         g = np.float32(0.0)
         for s, a, r in n_step_trajectory[::-1]:
-            g = r.value + grid.gamma * g
+            g = r.value + GAMMA * g
 
-        g += grid.gamma ** n * q_dict[key_current]
+        g += GAMMA ** n * q_dict[key_current]
 
         q_dict[key_to_update] += alpha * (g - q_dict[key_to_update])
 
@@ -113,6 +108,6 @@ for s in grid.states:
 print("Final State Values:")
 P_pi = grid.P_pi(policy)
 R_pi = grid.R_pi(policy)
-v = np.linalg.inv(np.eye(len(grid.states)) - grid.gamma * P_pi).dot(R_pi)
+v = np.linalg.inv(np.eye(len(grid.states)) - GAMMA * P_pi).dot(R_pi)
 for s in grid.states:
     print(f"v({s}) = {v[s.uid - 1]}")

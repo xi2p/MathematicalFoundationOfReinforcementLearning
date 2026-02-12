@@ -35,7 +35,6 @@ class GridWorldModel:
     ACTION_STAY = Action((0, 0))
 
     def __init__(self, width: int, height: int, forbidden_states: List[State], terminal_states: List[State],
-                 gamma: torch.Tensor = torch.tensor(0.9),
                  r_boundary: Reward = Reward(torch.tensor(-1.0)),
                  r_forbidden: Reward = Reward(torch.tensor(-1.0)),
                  r_terminal: Reward = Reward(torch.tensor(1.0)),
@@ -47,7 +46,6 @@ class GridWorldModel:
         :param height: The height of the grid world.
         :param forbidden_states: Forbidden states in the grid world.
         :param terminal_states: Terminal states in the grid world.
-        :param gamma: Discount factor.
         :param r_boundary: Reward for hitting the boundary.
         :param r_forbidden: Reward for hitting a wall.
         :param r_terminal: Reward for reaching a terminal state.
@@ -55,7 +53,6 @@ class GridWorldModel:
         """
         self.width = width
         self.height = height
-        self.gamma = gamma
         self.r_boundary = r_boundary
         self.r_forbidden = r_forbidden
         self.r_terminal = r_terminal

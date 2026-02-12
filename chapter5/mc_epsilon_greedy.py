@@ -7,13 +7,14 @@ from mforl.tabular.model import GridWorldModel
 from mforl.tabular.basic import Action, State, Reward, Policy
 import numpy as np
 
+
+GAMMA = np.float32(0.9)
+ITERATION_LIMIT = 50
+SAMPLE_LENGTH = 20000
+EPSILON = 0.2
+
+
 # model
-# grid = mforl.model.GridWorldModel(
-#     width=3,
-#     height=3,
-#     forbidden_states=[(0, 1), (0, 2), (2, 1)],
-#     terminal_states=[(2, 2)]
-# )
 grid = GridWorldModel(
     width=5,
     height=5,
@@ -25,12 +26,6 @@ grid = GridWorldModel(
     r_other=Reward(np.float32(0.0)),
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 policy = Policy(grid.states, grid.actions)
 policy.fill_uniform()
@@ -39,10 +34,6 @@ policy.fill_uniform()
 print(grid)
 
 # MC epsilon-Greedy policy iteration
-
-ITERATION_LIMIT = 50
-SAMPLE_LENGTH = 20000
-EPSILON = 0.2
 
 for t in range(ITERATION_LIMIT):
     # Episode generation
@@ -77,7 +68,7 @@ for t in range(ITERATION_LIMIT):
         if key not in q_dict:
             q_dict[key] = np.float32(0.0)
             num_dict[key] = 0
-        g = r.value + grid.gamma * g
+        g = r.value + GAMMA * g
         num_dict[key] += 1
         q_dict[key] += g
 
@@ -116,6 +107,6 @@ for s in grid.states:
 print("Final State Values:")
 P_pi = grid.P_pi(policy)
 R_pi = grid.R_pi(policy)
-v = np.linalg.inv(np.eye(len(grid.states)) - grid.gamma * P_pi).dot(R_pi)
+v = np.linalg.inv(np.eye(len(grid.states)) - GAMMA * P_pi).dot(R_pi)
 for s in grid.states:
     print(f"v({s}) = {v[s.uid - 1]}")

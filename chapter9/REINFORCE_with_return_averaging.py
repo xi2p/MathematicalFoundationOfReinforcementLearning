@@ -19,6 +19,8 @@ sys.path.append('..')
 from mforl.function.grid_world_model import GridWorldModel, PolicyTabular
 from mforl.function.basic import State, Action, Reward
 
+
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
 EPISODES_NUM = 2000
 TRAJECTORY_LENGTH = 1000
 LEARNING_RATE = 0.01
@@ -77,13 +79,13 @@ class PolicyNetwork(torch.nn.Module):
                 torch.nn.init.constant_(param, 0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        logits = self.net(x)
-        return F.softmax(logits, dim=-1)
+        output = self.net(x)
+        return F.softmax(output, dim=-1)
 
     def get_log_prob(self, state: State, action: Action) -> torch.Tensor:
         features = feature_extractor(state)
-        logits = self.net(features)
-        log_probs = F.log_softmax(logits, dim=-1)
+        output = self.net(features)
+        log_probs = F.log_softmax(output, dim=-1)
         return log_probs[ACTION_TO_INDEX_DICT[action]]
 
     def decide(self, state: State) -> Action:
@@ -144,7 +146,7 @@ for episode_idx in tqdm.trange(EPISODES_NUM, desc="Training Episodes"):
 
         g_t = torch.tensor(0.0, dtype=torch.float32)
         for t in range(T-1, -1, -1):
-            g_t = g_t * grid.gamma + rewards[t].value
+            g_t = g_t * GAMMA + rewards[t].value
             state = states[t]
             action = actions[t]
             if not (state, action) in q_dict:

@@ -7,6 +7,8 @@ import numpy as np
 from copy import deepcopy
 
 
+GAMMA = np.float32(0.9)
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -15,12 +17,6 @@ grid = GridWorldModel(
     terminal_states=[(2, 2)]
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 policy = Policy(grid.states, grid.actions)
 policy.fill_uniform()
@@ -59,7 +55,7 @@ for t in range(ITERATION_LIMIT):
                     next_state, reward = grid.step(current_state, current_action)
 
                     total_reward += discount * reward.value
-                    discount *= grid.gamma
+                    discount *= GAMMA
 
                     current_state = next_state
                     # follow the current policy to choose next action

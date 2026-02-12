@@ -6,6 +6,11 @@ from mforl.tabular.basic import Policy
 import numpy as np
 from copy import deepcopy
 
+
+GAMMA = np.float32(0.9)
+ITERATION_LIMIT = 100
+
+
 # model
 grid = GridWorldModel(
     width=2,
@@ -14,12 +19,6 @@ grid = GridWorldModel(
     terminal_states=[(1, 1)]
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 policy = Policy(grid.states, grid.actions)
 policy.fill_uniform()
@@ -31,7 +30,6 @@ print(grid)
 # Guess initial value vector
 v = np.zeros((len(grid.states)))
 
-ITERATION_LIMIT = 100
 for t in range(ITERATION_LIMIT):
     v_next = deepcopy(v)
     policy_next = deepcopy(policy)
@@ -49,7 +47,7 @@ for t in range(ITERATION_LIMIT):
 
             # then calculate value part
             for s_next in grid.states:
-                q_s_a += grid.p(s_next | (s, a)) * v[s_next.uid - 1] * grid.gamma
+                q_s_a += grid.p(s_next | (s, a)) * v[s_next.uid - 1] * GAMMA
 
             q_list.append(q_s_a)
             a_list.append(a)

@@ -10,6 +10,13 @@ from copy import deepcopy
 import tqdm
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
+NUM_EPISODES = 1000
+EPISODE_LENGTH = 200
+alpha = 0.01  # learning rate
+epsilon = 0.2
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -19,12 +26,6 @@ grid = GridWorldModel(
     r_forbidden=Reward(torch.tensor(-10.0))
 )
 
-# action
-action_up = grid.ACTION_UP
-action_down = grid.ACTION_DOWN
-action_left = grid.ACTION_LEFT
-action_right = grid.ACTION_RIGHT
-action_stay = grid.ACTION_STAY
 
 policy = PolicyTabular(grid.states, grid.actions)
 policy.fill_uniform()
@@ -32,11 +33,11 @@ policy.fill_uniform()
 
 print(grid)
 
-# Define the state value function
+# Define the q value function
 net = torch.nn.Sequential(
     torch.nn.Linear(4, 16),
-    # torch.nn.LeakyReLU(),
-    # torch.nn.Linear(16, 16),
+    torch.nn.LeakyReLU(),
+    torch.nn.Linear(16, 16),
     torch.nn.LeakyReLU(),
     torch.nn.Linear(16, 1)
 )
@@ -54,16 +55,9 @@ def feature_extractor(state: State, action: Action) -> torch.Tensor:
     return features
 
 
-
-
-
 # Q learning with function approximation
 
 # Generate episodes
-NUM_EPISODES = 100
-EPISODE_LENGTH = 100
-alpha = 0.01  # learning rate
-epsilon = 0.2
 episodes = []
 
 for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
@@ -71,8 +65,9 @@ for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
     current_action = policy.decide(current_state)
 
 
-    while not current_state in grid.terminal_states:
-
+    for i in range(EPISODE_LENGTH):
+        if current_state in grid.terminal_states:
+            break
         next_state, reward = grid.step(current_state, current_action)
 
         # find next action with max q
@@ -93,7 +88,7 @@ for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
         optimizer.zero_grad()
         v_t = net(feature_extractor(current_state, current_action))
         v_t1 = net(feature_extractor(next_state, next_action)).detach()  # detach to prevent backprop through next state
-        td_error = torch.pow(reward.value + grid.gamma * v_t1 - v_t, 2)
+        td_error = torch.pow(reward.value + GAMMA * v_t1 - v_t, 2)
         td_error.backward()
         optimizer.step()
 
@@ -121,8 +116,6 @@ for episode_idx in tqdm.trange(NUM_EPISODES, desc="Training Episodes"):
         current_action = next_action
 
 
-
-
 # print final policy
 print("Final Policy:")
 for s in grid.states:
@@ -130,4 +123,3 @@ for s in grid.states:
         prob = policy[a | s]
         if prob > 0:
             print(f"pi({a}|{s}) = {prob}")
-

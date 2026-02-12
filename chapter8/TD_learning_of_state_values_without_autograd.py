@@ -8,6 +8,12 @@ import random
 from copy import deepcopy
 
 
+GAMMA = torch.tensor(0.9, dtype=torch.float32)  # discount factor
+NUM_EPISODES = 1000
+EPISODE_LENGTH = 1000
+alpha = 0.01  # learning rate
+
+
 # model
 grid = GridWorldModel(
     width=3,
@@ -15,6 +21,8 @@ grid = GridWorldModel(
     forbidden_states=[State((0, 1)), State((0, 2)), State((2, 1))],
     terminal_states=[State((2, 2))]
 )
+
+print(grid)
 
 # action
 action_up = grid.ACTION_UP
@@ -34,8 +42,6 @@ policy[action_right | State((0, 2))] = torch.tensor(1.0)
 policy[action_right | State((1, 2))] = torch.tensor(1.0)
 policy[action_stay | State((2, 2))] = torch.tensor(1.0)
 
-
-print(grid)
 
 # Define the state value function
 # Use polygonal linear function approximation
@@ -83,13 +89,9 @@ def net(input: torch.Tensor) -> torch.Tensor:
     return torch.dot(w, input)
 
 
-
 # Use TD learning to optimize state value function
 
 # Generate episodes
-NUM_EPISODES = 1000
-EPISODE_LENGTH = 1000
-alpha = 0.01  # learning rate
 episodes = []
 
 for episode_idx in range(NUM_EPISODES):
@@ -114,7 +116,7 @@ for episode_idx in range(NUM_EPISODES):
         # print(f"state_t1: {state_t1}", end=", ")
 
 
-        delta = alpha * (reward_t.value + grid.gamma * feature_extractor(state_t1).dot(w) - feature_extractor(state_t).dot(w)) * feature_extractor(state_t)
+        delta = alpha * (reward_t.value + GAMMA * feature_extractor(state_t1).dot(w) - feature_extractor(state_t).dot(w)) * feature_extractor(state_t)
         # print(f"delta: {delta}")
         w += delta
 
